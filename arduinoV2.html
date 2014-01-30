@@ -1,0 +1,389 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Arduino Shield Ethernet</title>
+<!-- *********************************** jquery *********************************** -->
+<link rel="stylesheet" type="text/css" href="https://googledrive.com/host/0B-PDgG_BrutcTjVoLUtaOWx6d1E/jquery-ui-1.10.3.custom.css">
+<script type="text/javascript" src="https://googledrive.com/host/0B-PDgG_BrutcTjVoLUtaOWx6d1E/jquery-1.9.1.js"></script>
+<script type="text/javascript" src="https://googledrive.com/host/0B-PDgG_BrutcTjVoLUtaOWx6d1E/jquery-ui-1.10.3.custom.js"></script>
+
+<!-- *********************************** Estilo *********************************** -->
+<style type="text/css">
+	@import url(http://fonts.googleapis.com/css?family=Ubuntu);
+	body {
+		font-family: ubuntu, sans-serif;
+		background-color: #DD4814;
+		color: #1C94C4;
+	}	
+
+	#barraSuperior{
+		position:fixed; /*El div será ubicado con relación a la pantalla*/
+		left:0px; /*A la derecha deje un espacio de 0px*/
+		right:0px; /*A la izquierda deje un espacio de 0px*/
+		top:0px; /*Abajo deje un espacio de 0px*/
+		height:40px; /*alto del div*/
+		z-index:0;
+		background-color:  gray;
+		color: white;
+		text-align: right;
+		padding-right: 15px;	
+	}
+
+	#contenedor{
+		position: absolute;
+		top: 40px;
+		left: 15%;
+		background-color: #fff;
+		border:1px solid gray;
+		border-radius: 5px;
+		box-shadow: inset 0px 0px 5px #3399FF;
+		box-shadow: 0px 0px 5px #3399FF;
+		margin: 0 auto;
+		width: 70%;
+		height: auto;
+		text-align: center;
+		z-index: -1;
+	}
+
+	.lecturas{
+		margin: 0 auto;
+		/*background-color: green;*/
+		height: auto;
+	}
+
+	#checkboxes, #sensorMovimiento, #sensorTemperatura{
+		/*background-color: blue;
+		border: 1px solid gray;*/
+		display: inline-block;
+		margin-top: 50px;
+		width:25%;
+		height:165px;
+	}
+
+	#sensorM{
+		margin-bottom: 15px;
+		display: block;
+
+	}
+
+	.etiqueta {
+		display: inline-block;
+		margin-top: 15px;
+		margin-bottom: 20px;
+		border-bottom: 2px solid gray;
+	}
+
+
+	#checkboxes {
+		float: left;
+		margin-left: 50px;
+	}
+
+	#checkboxes input {
+    	display: block;
+	}
+
+	#sensorTemperatura {
+		float: right;
+		margin-right: 50px;
+	}
+
+	#sensorT1 {
+		display: block;
+		margin-bottom: 20px;
+	}
+
+	.slider {
+		clear: both;
+		width: 70%;
+		padding-bottom: 20px;
+		margin: 0 auto;
+		margin-top: 20px;	
+		/*border: 1px solid gray;*/
+	}
+
+	#lecturasCorriente, #humedad{
+		/*border: 1px solid gray;*/
+		margin-top: 50px;
+		margin-bottom: 15px;
+		display: inline-block;
+
+	}
+
+	#lecturasCorriente{
+		width: 50%;
+		margin-left: 50px;
+		float: left;
+	}
+
+	 #humedad{
+	 	width: 30%;
+		margin-right: 50px;
+		float: right;
+		display: inline-block;			
+	}
+
+</style>
+
+
+
+<!-- *********************************** ToggleButton *********************************** -->
+<script>
+  $(function() {
+    $( "#check1" ).button();
+    $( "#check2" ).button();
+  });
+  </script>
+
+<!-- *********************************** Slider *********************************** -->
+  <script>
+  $(function() {
+    $( "#slide" ).slider({
+      range: true,
+      min: 0,
+      max: 255,
+      values: [ 50, 200 ],
+      slide: function( event, ui ) {
+        $( "#tempInferior" ).val( ui.values[ 0 ] );
+        $( "#tempSuperior" ).val( ui.values[ 1 ] );
+      }
+    });
+    $( "#tempInferior" ).val( $( "#slide" ).slider( "values", 0 ) );
+    $( "#tempSuperior" ).val( $( "#slide" ).slider( "values", 1 ) );
+  });
+  </script>
+
+<!-- *********************************** AJAX *********************************** -->
+  <script>
+		estadoCheck1 = "";
+		estadoCheck2 = "";
+		minSlide = "";
+		maxSlide = "";
+		var LED3_state = 0;
+		var LED4_state = 0;
+		function GetArduinoIO()
+		{
+			nocache = "&nocache=" + Math.random() * 1000000;
+			var request = new XMLHttpRequest();
+			request.onreadystatechange = function()
+			{
+				if (this.readyState == 4) {
+					if (this.status == 200) {
+						if (this.responseXML != null) {
+							// Procesamiento del achivo XML, con los diferentes valores
+							var count;
+
+							// Recuperamos el valor de las variables
+
+							// Sensor de movimiento
+							document.getElementById("sensorM").innerHTML = 
+								this.responseXML.getElementsByTagName('movimiento')[0].childNodes[0].nodeValue;
+
+							// Sensores de temperatura
+							document.getElementById("sensorT1").innerHTML = 
+								this.responseXML.getElementsByTagName('temperatura')[0].childNodes[0].nodeValue;
+
+							document.getElementById("sensorT2").innerHTML = 
+								this.responseXML.getElementsByTagName('temperatura')[1].childNodes[0].nodeValue;
+
+							// Rangos de temperatura
+							document.getElementById("tempInferior").value = 
+								this.responseXML.getElementsByTagName('rangos')[0].childNodes[0].nodeValue;
+
+							document.getElementById("tempSuperior").value = 
+								this.responseXML.getElementsByTagName('rangos')[1].childNodes[0].nodeValue;
+
+							// Lecturas 
+							document.getElementById("corriente").value = 
+								this.responseXML.getElementsByTagName('lecturas')[0].childNodes[0].nodeValue;
+
+							document.getElementById("potencia").value = 
+								this.responseXML.getElementsByTagName('lecturas')[1].childNodes[0].nodeValue;
+
+							document.getElementById("potenciaRelativa").value = 
+								this.responseXML.getElementsByTagName('lecturas')[2].childNodes[0].nodeValue;
+
+							document.getElementById("energia").value = 
+								this.responseXML.getElementsByTagName('lecturas')[3].childNodes[0].nodeValue;
+
+							document.getElementById("energiaInicial").value = 
+								this.responseXML.getElementsByTagName('lecturas')[4].childNodes[0].nodeValue;
+
+							document.getElementById("energiaFinal").value = 
+								this.responseXML.getElementsByTagName('lecturas')[5].childNodes[0].nodeValue;
+
+							document.getElementById("voltaje").value = 
+								this.responseXML.getElementsByTagName('lecturas')[6].childNodes[0].nodeValue;
+
+							// Humedad
+							document.getElementById("valorHumedad").innerHTML = 
+								this.responseXML.getElementsByTagName('humedad')[0].childNodes[0].nodeValue;
+
+							// LED 1
+							if (this.responseXML.getElementsByTagName('check')[0].childNodes[0].nodeValue === "checked") {
+								//document.controles.check1.checked = true;
+								$( "#check1" ).attr('checked', true).button('refresh');
+								console.log('chequeado boton1');
+							}
+							else {
+								//document.controles.check1.checked = false;
+								$( "#check1" ).attr('checked', false).button('refresh');
+								console.log('no-chequeado boton1');
+							}
+							// LED 2
+							if (this.responseXML.getElementsByTagName('check')[1].childNodes[0].nodeValue === "checked") {
+								//document.controles.check2.checked = true;
+								$( "#check2" ).attr('checked', true).button('refresh');
+								console.log('chequeado boton2');
+							}
+							else {
+								//document.controles.check2.checked = false;
+								$( "#check2" ).attr('checked', false).button('refresh');
+								console.log('no-chequeado boton2');
+							}
+						}
+					}
+				}
+			}
+			// send HTTP GET request with LEDs to switch on/off if any
+			request.open("GET", "ajax_inputs" + estadoCheck1 + estadoCheck2 + minSlide + maxSlide + nocache, true);
+			request.send(null);
+			setTimeout('GetArduinoIO()', 1000);
+			estadoCheck1 = "";
+			estadoCheck2 = "";
+			minSlide = "";
+			maxSlide = "";
+		}
+		//Se cambia el estado de los checkbox
+		function GetCheck()
+		{
+			if (controles.check1.checked) {
+				estadoCheck1 = "&LED1=1";
+				$( "#check1" ).attr('checked', true).button('refresh');
+			}
+			else {
+				estadoCheck1 = "&LED1=0";
+				$( "#check1" ).attr('checked', false).button('refresh');
+			}
+			if (controles.check2.checked) {
+				estadoCheck2 = "&LED2=1";
+				$( "#check2" ).attr('checked', true).button('refresh');
+			}
+			else {
+				estadoCheck2 = "&LED2=0";
+				$( "#check2" ).attr('checked', false).button('refresh');
+			}
+		}
+		//Se cambia el valor maximo y minimo del slide
+		function setSlide()
+		{
+			minSlide = "&MIN=" + $( "#slide" ).slider( "values", 0 );
+			maxSlide = "&MAX=" + $( "#slide" ).slider( "values", 1 );
+			//alert(minSlide+' '+maxSlide);
+		}
+	</script>
+
+
+</head>
+
+<body onload="GetArduinoIO()">
+<form name='controles'>
+	<div id='barraSuperior'>
+			<!-- *********************************** Mostrar fecha *********************************** -->
+			<script>
+				var meses = new Array ("Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre");
+				var diasSemana = new Array("Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado");
+				var f = new Date();
+				document.getElementById('barraSuperior').innerHTML = diasSemana[f.getDay()] + " " + f.getDate() + " de " + meses[f.getMonth()] + " de " + f.getFullYear();
+			</script>
+			
+		</div>
+	<div id='contenedor'> 	
+	<!-- *********************************** seccion 2 *********************************** -->
+		<div class='lecturas'>
+			<div id='checkboxes'>
+				<label class="etiqueta">INTERRUPTORES</label>
+				<input type="checkbox" id="check1" onclick="GetCheck()"><label for="check1" style='margin-bottom: 20px;'>LED1</label>
+				<input type="checkbox" id="check2" onclick="GetCheck()"><label for="check2">LED2</label>			
+			</div>
+
+			<div id='sensorMovimiento'>
+				<label class="etiqueta">USO DE LA HABITACION</label>
+				<label id='sensorM'> ESTADO </label>
+			</div>
+
+			<div id='sensorTemperatura'>
+				<label class="etiqueta">TEMPERATURA</label>
+				<label id="sensorT1">VALOR SENSOR T1</label>
+				<label id="sensorT2">VALOR SENSOR T2</label>
+			</div>
+		</div> 
+
+	<!-- *********************************** seccion 3 *********************************** -->
+		<div class='slider'>
+			<label class="etiqueta" >RANGO DE TEMPERATURAS</label>
+			<div>
+				<label> Temperatura Minima:</label>
+				<input type="text" id="tempInferior" size="3" style="border:0; color:#f6931f; font-weight:bold;" readonly>
+			</div>
+			<div>
+				<label>Temperatura Maxima:</label>
+				<input type="text" id="tempSuperior" size="3" style="border:0; color:#f6931f; font-weight:bold; margin-bottom:15px;" readonly>
+			</div>
+			<div id='slide' onmouseup="setSlide()"></div>
+		</div>
+
+	<!-- *********************************** seccion 4 *********************************** -->
+		<div class='lecturas'>
+			<div id='lecturasCorriente'>
+				<label class="etiqueta" >LECTURAS</label>
+				<div >
+					<div style='float:left; text-align:left;margin:0 10px 25px 20px;'>
+						<div style="display: block">
+							<label>Corriente:</label>
+							<input id="corriente" type='text' size='3' style="border:0; color:#f6931f; font-weight:bold;" value="0" readonly>
+						</div>
+						<div style="display: block">
+							<label>Potencia:</label>
+							<input id="potencia" type='text' size='3' style="border:0; color:#f6931f; font-weight:bold;" value="0" readonly>
+						</div>
+						<div style="display: block">
+							<label>Potencia Relativa:</label>
+							<input id="potenciaRelativa" type='text' size='3' style="border:0; color:#f6931f; font-weight:bold;" value="0" readonly>
+						</div>
+					</div>
+					<div style='float:right; text-align:left; margin:0 0 25px 0;'>
+						<div style="display: block">	
+							<label>Energia:</label>
+							<input id="energia" type='text' size='3' style="border:0; color:#f6931f; font-weight:bold;" value="0" readonly>
+						</div>
+						<div style="display: block">
+							<label>Energia Inicial:</label>
+							<input id="energiaInicial" type='text' size='3' style="border:0; color:#f6931f; font-weight:bold;" value="0" readonly>
+						</div>
+						<div style="display: block">
+							<label>Energia Final:</label>
+							<input id="energiaFinal" type='text' size='3' style="border:0; color:#f6931f; font-weight:bold;" value="0" readonly>
+						</div>
+						<div style="display: block">
+							<label>Voltaje:</label>
+							<input id="voltaje" type='text' size='3' style="border:0; color:#f6931f; font-weight:bold;" value="0" readonly>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div id='humedad'>
+				<label class="etiqueta" >HUMEDAD RELATIVA</label>
+				<div style="display: block">
+					<label id='valorHumedad'>Humedad</label>
+				</div>
+			</div>
+		</div>
+		
+	</div>
+</form>
+
+</body>
+</html>
