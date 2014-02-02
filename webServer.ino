@@ -14,7 +14,7 @@ void webServer(){
                     req_index++;
                 }
                 // last line of client request is blank and ends with \n
-                // respond to client only after last line received
+                // respond to client only after last line received      
                 if (c == '\n' && currentLineIsBlank) {
                     // send a standard http response header
                     client.println("HTTP/1.1 200 OK");
@@ -71,8 +71,7 @@ void webServer(){
 
 // checks if received HTTP request is switching on/off LEDs
 // also saves the state of the LEDs
-void setValues(void)
-{
+void setValues(void){
     // LED 1 (pin 6)
     if (StrContains(HTTP_req, "LED1=1")) {
         LED_state[0] = 1;  // save LED state
@@ -89,12 +88,9 @@ void setValues(void)
         LED_state[1] = 0;  // save LED state
         digitalWrite(8, LOW);
     }
-    // LED 3 intensidad
-    if (StrContains(HTTP_req, "MIN")) {
-        analogWrite(3, HIGH);
-    }else if (StrContains(HTTP_req, "MAX")) {
-        analogWrite(5, LOW);
-    }
+
+    //recibimos el valor del slide.
+    SlideValues(HTTP_req);
 }
 
 // send the XML file with analog values, switch status
@@ -103,13 +99,13 @@ void XML_response(EthernetClient cl)
 {
     int analog_val;            // stores value read from analog input
     analog_val = digitalRead(7);
-    Serial.print(analog_val);
+    //Serial.print(analog_val);
     
-    cl.print("<?xml version = \"1.0\" ?>");
-    cl.print("<inputs>");
+    cl.println("<?xml version = \"1.0\" ?>");
+    cl.println("<inputs>");
     
     // sensores de movimiento
-    cl.println("<movimiento>");
+    cl.print("<movimiento>");
     cl.print(analog_val);
     cl.println("</movimiento>");
     
@@ -124,10 +120,10 @@ void XML_response(EthernetClient cl)
     
     //rangos de temperatura
     cl.print("<rangos>");
-      cl.print(analog_val+2);
+      cl.print(slide_values[0]);
     cl.println("</rangos>");
     cl.print("<rangos>");
-      cl.print(analog_val+3);
+      cl.print(slide_values[1]);
     cl.println("</rangos>");
     
     //lecturas energia
@@ -222,4 +218,29 @@ char StrContains(char *str, char *sfind)
     }
 
     return 0;
+}
+
+ bool SlideValues(char *str){
+  String url = str;                   //convertimos str a tipo String para utilizar sus metodos
+  if(url.indexOf('N')!=-1 && url.indexOf('X')!=-1){
+      int pos = url.indexOf('N');         //Posicion de la 'N' de 'MIN' [Estructura: MIN=123], el conteo comienza en 0
+      String valor="";
+    
+      for(int i=0; i<3; i++){
+        valor.concat(url.charAt(pos+2));
+        pos++;
+      }
+      slide_values[0] = valor.toInt();
+      
+      pos = url.indexOf('X');
+      valor="";
+      for(int i=0; i<3; i++){
+        valor.concat(url.charAt(pos+2));
+        pos++;
+      }
+      slide_values[1] = valor.toInt();
+      return true;
+  }else{
+    return false;
+  }
 }

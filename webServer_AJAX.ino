@@ -12,6 +12,7 @@ File webFile;               // the web page file on the SD card
 char HTTP_req[REQ_BUF_SZ] = {0}; // buffered HTTP request stored as null terminated string
 char req_index = 0;              // index into HTTP_req buffer
 boolean LED_state[2] = {0}; // stores the states of the LEDs
+int slide_values[2]={0, 255};    //posicion [0] el minimo y [1] el maximo
 
 void setup()
 {
