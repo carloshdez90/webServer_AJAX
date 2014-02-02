@@ -3,14 +3,15 @@
 <head>
 <meta charset="utf-8">
 <title>Arduino Shield Ethernet</title>
-<!-- *********************************** jquery *********************************** -->
-<link rel="stylesheet" type="text/css" href="https://googledrive.com/host/0B-PDgG_BrutcTjVoLUtaOWx6d1E/jquery-ui-1.10.3.custom.css">
-<script type="text/javascript" src="https://googledrive.com/host/0B-PDgG_BrutcTjVoLUtaOWx6d1E/jquery-1.9.1.js"></script>
-<script type="text/javascript" src="https://googledrive.com/host/0B-PDgG_BrutcTjVoLUtaOWx6d1E/jquery-ui-1.10.3.custom.js"></script>
 
 <!-- *********************************** Estilo *********************************** -->
 <style type="text/css">
 	@import url(http://fonts.googleapis.com/css?family=Ubuntu);
+	* {
+		/*border:1px solid darkgray;*/
+		font-family: ubuntu, sans-serif;
+		color: #1C94C4;
+	}
 	body {
 		font-family: ubuntu, sans-serif;
 		background-color: #DD4814;
@@ -53,8 +54,6 @@
 	}
 
 	#checkboxes, #sensorMovimiento, #sensorTemperatura{
-		/*background-color: blue;
-		border: 1px solid gray;*/
 		display: inline-block;
 		margin-top: 50px;
 		width:25%;
@@ -78,10 +77,18 @@
 	#checkboxes {
 		float: left;
 		margin-left: 50px;
+
 	}
 
-	#checkboxes input {
-    	display: block;
+	.check{
+		transform: scale(2,2);
+		-ms-transform: scale(2,2); /* IE 9 */
+		-webkit-transform: scale(2,2); /* Safari and Chrome */
+		margin-right: 15px;
+	}
+
+	#l_check1{
+    	display: inline-block;
 	}
 
 	#sensorTemperatura {
@@ -89,7 +96,7 @@
 		margin-right: 50px;
 	}
 
-	#sensorT1 {
+	#sensorT1, #sensorT2 {
 		display: block;
 		margin-bottom: 20px;
 	}
@@ -126,34 +133,6 @@
 
 </style>
 
-
-
-<!-- *********************************** ToggleButton *********************************** -->
-<script>
-  $(function() {
-    $( "#check1" ).button();
-    $( "#check2" ).button();
-  });
-  </script>
-
-<!-- *********************************** Slider *********************************** -->
-  <script>
-  $(function() {
-    $( "#slide" ).slider({
-      range: true,
-      min: 0,
-      max: 255,
-      values: [ 50, 200 ],
-      slide: function( event, ui ) {
-        $( "#tempInferior" ).val( ui.values[ 0 ] );
-        $( "#tempSuperior" ).val( ui.values[ 1 ] );
-      }
-    });
-    $( "#tempInferior" ).val( $( "#slide" ).slider( "values", 0 ) );
-    $( "#tempSuperior" ).val( $( "#slide" ).slider( "values", 1 ) );
-  });
-  </script>
-
 <!-- *********************************** AJAX *********************************** -->
   <script>
 		estadoCheck1 = "";
@@ -162,12 +141,34 @@
 		maxSlide = "";
 		var LED3_state = 0;
 		var LED4_state = 0;
+
+		function completarCeros(cadena){
+			cadena = cadena+"";
+			if (cadena.length < 3 ){
+				if (cadena.length === 2) {
+					var cad = '0'+ cadena;
+					return cad;
+
+				}else if (cadena.length === 1) {
+					var cad = '00'+ cadena;
+					return cad;
+				}
+			}	
+			return cadena;			
+		}
+
+		//Se cambia el valor maximo y minimo del slide
+		function setSlide()
+		{	
+			minSlide = "&MIN=" + completarCeros(document.getElementById('smin').value);
+			maxSlide = "&MAX=" + completarCeros(document.getElementById('smax').value);
+		}
+
 		function GetArduinoIO()
 		{
 			nocache = "&nocache=" + Math.random() * 1000000;
 			var request = new XMLHttpRequest();
-			request.onreadystatechange = function()
-			{
+			request.onreadystatechange = function(){
 				if (this.readyState == 4) {
 					if (this.status == 200) {
 						if (this.responseXML != null) {
@@ -188,11 +189,15 @@
 								this.responseXML.getElementsByTagName('temperatura')[1].childNodes[0].nodeValue;
 
 							// Rangos de temperatura
-							document.getElementById("tempInferior").value = 
-								this.responseXML.getElementsByTagName('rangos')[0].childNodes[0].nodeValue;
+							document.getElementById("tempInferior").value = this.responseXML.getElementsByTagName('rangos')[0].childNodes[0].nodeValue;
+							document.getElementById("smin").value = this.responseXML.getElementsByTagName('rangos')[0].childNodes[0].nodeValue;
+								//$( "#tempInferior" ).val( this.responseXML.getElementsByTagName('rangos')[0].childNodes[0].nodeValue );
+								//$('#slide').slider('refresh');
 
-							document.getElementById("tempSuperior").value = 
-								this.responseXML.getElementsByTagName('rangos')[1].childNodes[0].nodeValue;
+							document.getElementById("tempSuperior").value = this.responseXML.getElementsByTagName('rangos')[1].childNodes[0].nodeValue;
+							document.getElementById("smax").value = this.responseXML.getElementsByTagName('rangos')[1].childNodes[0].nodeValue;
+								//$( "#tempSuperior" ).val( this.responseXML.getElementsByTagName('rangos')[1].childNodes[0].nodeValue );
+								//$('#slide').slider('refresh');
 
 							// Lecturas 
 							document.getElementById("corriente").value = 
@@ -222,25 +227,18 @@
 
 							// LED 1
 							if (this.responseXML.getElementsByTagName('check')[0].childNodes[0].nodeValue === "checked") {
-								//document.controles.check1.checked = true;
-								$( "#check1" ).attr('checked', true).button('refresh');
-								console.log('chequeado boton1');
+								document.controles.check1.checked = true;
 							}
 							else {
-								//document.controles.check1.checked = false;
-								$( "#check1" ).attr('checked', false).button('refresh');
-								console.log('no-chequeado boton1');
+								document.controles.check1.checked = false;
 							}
+
 							// LED 2
 							if (this.responseXML.getElementsByTagName('check')[1].childNodes[0].nodeValue === "checked") {
-								//document.controles.check2.checked = true;
-								$( "#check2" ).attr('checked', true).button('refresh');
-								console.log('chequeado boton2');
+								document.controles.check2.checked = true;
 							}
 							else {
-								//document.controles.check2.checked = false;
-								$( "#check2" ).attr('checked', false).button('refresh');
-								console.log('no-chequeado boton2');
+								document.controles.check2.checked = false;
 							}
 						}
 					}
@@ -260,30 +258,32 @@
 		{
 			if (controles.check1.checked) {
 				estadoCheck1 = "&LED1=1";
-				$( "#check1" ).attr('checked', true).button('refresh');
 			}
 			else {
 				estadoCheck1 = "&LED1=0";
-				$( "#check1" ).attr('checked', false).button('refresh');
 			}
 			if (controles.check2.checked) {
 				estadoCheck2 = "&LED2=1";
-				$( "#check2" ).attr('checked', true).button('refresh');
 			}
 			else {
 				estadoCheck2 = "&LED2=0";
-				$( "#check2" ).attr('checked', false).button('refresh');
 			}
 		}
-		//Se cambia el valor maximo y minimo del slide
-		function setSlide()
-		{
-			minSlide = "&MIN=" + $( "#slide" ).slider( "values", 0 );
-			maxSlide = "&MAX=" + $( "#slide" ).slider( "values", 1 );
-			//alert(minSlide+' '+maxSlide);
-		}
-	</script>
 
+		function OnChangeSlide(slide, tipo){
+			if(tipo === 1){
+				document.getElementById('tempInferior').value = slide.value;
+				setSlide();
+				minSlide = "&MIN=" + completarCeros(document.getElementById('smin').value);
+				console.log(minSlide);
+			}else{
+				document.getElementById('tempSuperior').value = slide.value;
+				setSlide();
+				maxSlide = "&MAX=" + completarCeros(document.getElementById('smax').value);
+				console.log(maxSlide);
+			}
+	}
+    </script>
 
 </head>
 
@@ -304,8 +304,14 @@
 		<div class='lecturas'>
 			<div id='checkboxes'>
 				<label class="etiqueta">INTERRUPTORES</label>
-				<input type="checkbox" id="check1" onclick="GetCheck()"><label for="check1" style='margin-bottom: 20px;'>LED1</label>
-				<input type="checkbox" id="check2" onclick="GetCheck()"><label for="check2">LED2</label>			
+				<div>
+					<input type="checkbox" class="check" id="check1" onclick="GetCheck()">
+					<label id="l_check1" style='margin-bottom: 20px;'>LED1</label>
+				</div>
+				<div>
+					<input type="checkbox" class="check" id="check2" onclick="GetCheck()">
+					<label id="l_check2">LED2</label>			
+				</div>				
 			</div>
 
 			<div id='sensorMovimiento'>
@@ -324,14 +330,25 @@
 		<div class='slider'>
 			<label class="etiqueta" >RANGO DE TEMPERATURAS</label>
 			<div>
-				<label> Temperatura Minima:</label>
-				<input type="text" id="tempInferior" size="3" style="border:0; color:#f6931f; font-weight:bold;" readonly>
+				<div>
+					<label> Temperatura Minima:</label> 
+					<input type="text" id="tempInferior" size="3" style="border:0; font-size:16px; color:#f6931f;" readonly>
+				</div>
+				<div>
+					0<input onmouseup="OnChangeSlide(this, 1)" type="range" style=" margin-bottom:30px;" id="smin" min="0" max="127" step="0.5">127
+				</div> 
+				
 			</div>
 			<div>
-				<label>Temperatura Maxima:</label>
-				<input type="text" id="tempSuperior" size="3" style="border:0; color:#f6931f; font-weight:bold; margin-bottom:15px;" readonly>
+				<div>
+					<label>Temperatura Maxima:</label>
+					<input  type="text" id="tempSuperior" size="3" style="border:0; font-size:16px; color:#f6931f;" readonly>
+				</div>
+				<div>
+					128<input onmouseup="OnChangeSlide(this, 0)" type="range" id="smax" min="128" max="255" step="0.5">255
+				</div>
 			</div>
-			<div id='slide' onmouseup="setSlide()"></div>
+			<div id='slide'></div>
 		</div>
 
 	<!-- *********************************** seccion 4 *********************************** -->
@@ -353,7 +370,7 @@
 							<input id="potenciaRelativa" type='text' size='3' style="border:0; color:#f6931f; font-weight:bold;" value="0" readonly>
 						</div>
 					</div>
-					<div style='float:right; text-align:left; margin:0 0 25px 0;'>
+					<div style='float:right; text-align:left; margin:0 20px 25px 0;'>
 						<div style="display: block">	
 							<label>Energia:</label>
 							<input id="energia" type='text' size='3' style="border:0; color:#f6931f; font-weight:bold;" value="0" readonly>
